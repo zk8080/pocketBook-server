@@ -38,12 +38,16 @@ module.exports = appInfo => {
       // 密码
       password: 'Zkang105', // 初始化密码，没设置的可以不写
       // 数据库名
-      database: 'test', // 我们新建的数据库名称
+      database: 'my_cost', // 我们新建的数据库名称
     },
     // 是否加载到 app 上，默认开启
     app: true,
     // 是否加载到 agent 上，默认关闭
     agent: false,
+  };
+
+  config.jwt = {
+    secret: 'zk8080',
   };
 
   // add your user config here
