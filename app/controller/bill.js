@@ -137,6 +137,118 @@ class BillController extends Controller {
       };
     }
   }
+
+  // 获取账单详情
+  async detail() {
+    const { ctx, app } = this;
+    // 获取账单 id 参数
+    const { id = '' } = ctx.query;
+    // 获取用户 user_id
+    const token = ctx.request.header.authorization;
+    // 获取当前用户信息
+    const decode = await app.jwt.verify(token, app.config.jwt.secret);
+    if (!decode) return;
+    // 判断是否传入账单 id
+    if (!id) {
+      ctx.body = {
+        code: 500,
+        msg: '账单id不能为空',
+        data: null,
+      };
+      return;
+    }
+
+    try {
+    // 从数据库获取账单详情
+      const detail = await ctx.service.bill.detail(id, decode.id);
+      ctx.body = {
+        code: 200,
+        msg: '请求成功',
+        data: detail,
+      };
+    } catch (error) {
+      ctx.body = {
+        code: 500,
+        msg: '系统错误',
+        data: null,
+      };
+    }
+  }
+
+  // 编辑账单
+  async update() {
+    const { ctx, app } = this;
+    // 账单的相关参数，这里注意要把账单的 id 也传进来
+    const { id, amount, type_id, type_name, date, pay_type, remark = '' } = ctx.request.body;
+    // 判空处理
+    if (!id || !amount || !type_id || !type_name || !date || !pay_type) {
+      ctx.body = {
+        code: 400,
+        msg: '参数错误',
+        data: null,
+      };
+    }
+
+    try {
+      const token = ctx.request.header.authorization;
+      const decode = await app.jwt.verify(token, app.config.jwt.secret);
+      if (!decode) return;
+      // 根据账单 id 和 user_id，修改账单数据
+      const result = await ctx.service.bill.update({
+        id, // 账单 id
+        amount, // 金额
+        type_id, // 消费类型 id
+        type_name, // 消费类型名称
+        date, // 日期
+        pay_type, // 消费类型
+        remark, // 备注
+        user_id: decode.id, // 用户 id
+      });
+      ctx.body = {
+        code: 200,
+        msg: '请求成功',
+        data: null,
+      };
+    } catch (error) {
+      ctx.body = {
+        code: 500,
+        msg: '系统错误',
+        data: null,
+      };
+    }
+  }
+
+  // 删除账单
+  async delete() {
+    const { ctx, app } = this;
+    const { id } = ctx.request.body;
+
+    if (!id) {
+      ctx.body = {
+        code: 400,
+        msg: '参数错误',
+        data: null,
+      };
+    }
+
+    try {
+      const token = ctx.request.header.authorization;
+      const decode = await app.jwt.verify(token, app.config.jwt.secret);
+      if (!decode) return;
+      const result = await ctx.service.bill.delete(id, decode.id);
+      ctx.body = {
+        code: 200,
+        msg: '请求成功',
+        data: null,
+      };
+    } catch (error) {
+      ctx.body = {
+        code: 500,
+        msg: '系统错误',
+        data: null,
+      };
+    }
+  }
 }
 
 module.exports = BillController;
