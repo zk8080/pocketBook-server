@@ -249,6 +249,112 @@ class BillController extends Controller {
       };
     }
   }
+
+  // 图表分析数据
+  async data() {
+    const { ctx, app } = this;
+    const { date = '' } = ctx.query;
+    // 获取用户 user_id
+    const token = ctx.request.header.authorization;
+    const decode = await app.jwt.verify(token, app.config.jwt.secret);
+    if (!decode) return;
+
+    if (!date) {
+      ctx.body = {
+        code: 400,
+        msg: '参数错误',
+        data: null,
+      };
+      return;
+    }
+    try {
+      const result = await ctx.service.bill.list(decode.id);
+      const start = moment(date).startOf('month').unix() * 1000; // 选择月份，月初时间
+      const end = moment(date).endOf('month').unix() * 1000; // 选择月份，月末时间
+      const _data = result.filter(item => {
+        if (Number(item.date) > start && Number(item.date) < end) {
+          return item;
+        }
+      });
+
+      // 总支出
+      const total_expense = _data.reduce((arr, cur) => {
+        if (cur.pay_type == 1) {
+          arr += Number(cur.amount);
+        }
+        return arr;
+      }, 0);
+
+      // 总收入
+      const total_income = _data.reduce((arr, cur) => {
+        if (cur.pay_type == 2) {
+          arr += Number(cur.amount);
+        }
+        return arr;
+      }, 0);
+
+      // 获取收支构成
+      let total_data = _data.reduce((arr, cur) => {
+        const index = arr.findIndex(item => item.type_id == cur.type_id);
+        if (index == -1) {
+          arr.push({
+            type_id: cur.type_id,
+            type_name: cur.type_name,
+            pay_type: cur.pay_type,
+            number: Number(cur.amount),
+          });
+        }
+        if (index > -1) {
+          arr[index].number += Number(cur.amount);
+        }
+        return arr;
+      }, []);
+
+      total_data = total_data.map(item => {
+        item.number = Number(Number(item.number).toFixed(2));
+        return item;
+      });
+
+      // 柱状图数据
+      // let bar_data = _data.reduce((curr, arr) => {
+      //   const index = curr.findIndex(item => item.date == moment(Number(arr.date)).format('YYYY-MM-DD'))
+      //   if (index == -1) {
+      //     curr.push({
+      //       pay_type: arr.pay_type,
+      //       date: moment(Number(arr.date)).format('YYYY-MM-DD'),
+      //       number: Number(arr.amount)
+      //     })
+      //   }
+      //   if (index > -1) {
+      //     curr[index].number += Number(arr.amount)
+      //   }
+
+      //   return curr
+      // }, [])
+
+      // bar_data = bar_data.sort((a, b) => moment(a.date).unix() - moment(b.date).unix()).map((item) => {
+      //   item.number = Number(item.number).toFixed(2)
+      //   return item
+      // })
+
+      ctx.body = {
+        code: 200,
+        msg: '请求成功',
+        data: {
+          total_expense: Number(total_expense).toFixed(2),
+          total_income: Number(total_income).toFixed(2),
+          total_data: total_data || [],
+          // bar_data: bar_data || []
+        },
+      };
+    } catch (error) {
+      ctx.body = {
+        code: 500,
+        msg: '系统错误',
+        data: null,
+      };
+    }
+  }
 }
 
 module.exports = BillController;
