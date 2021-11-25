@@ -14,7 +14,9 @@ module.exports = app => {
   router.post('/api/user/register', controller.user.register);
   router.post('/api/user/login', controller.user.login);
   router.get('/api/user/verify', _jwt, controller.user.verify);
-  router.get('/api/upload', _jwt, controller.upload.upload);
+  router.get('/api/upload', _jwt, controller.upload.upload); // 上传
   router.get('/api/user/get_userinfo', _jwt, controller.user.getUserInfo); // 获取用户信息
   router.post('/api/user/edit_userinfo', _jwt, controller.user.editUserInfo); // 修改用户个性签名
+  router.post('/api/bill/add', _jwt, controller.bill.add); // 添加账单
+  router.get('/api/bill/list', _jwt, controller.bill.list); // 获取账单列表
 };
